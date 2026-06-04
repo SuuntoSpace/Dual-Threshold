@@ -27,12 +27,12 @@ function onLoad(input, output) {
   currentTemplate = 't';
 
   stageDurIndex = 0;
-  WARMUP_DUR = 60;
-  STAGE_1_DUR = 60;
-  STAGE_2_DUR = 60;
-  STAGE_3_DUR = 60;
-  STAGE_4_DUR = 30;
-  COOLDOWN_DUR = 30;
+  WARMUP_DUR = 600;
+  STAGE_1_DUR = 600;
+  STAGE_2_DUR = 600;
+  STAGE_3_DUR = 600;
+  STAGE_4_DUR = 600;
+  COOLDOWN_DUR = 300;
 
   lt1_hr = 0;
   lt1_pace = 0;
@@ -73,12 +73,12 @@ function onExerciseStart(input, output) {
   lt2_detected = false;
   isPaused = 0;
 
-  WARMUP_DUR = 60;
-  STAGE_1_DUR = 60;
-  STAGE_2_DUR = 60;
-  STAGE_3_DUR = 60;
-  STAGE_4_DUR = 30;
-  COOLDOWN_DUR = 30;
+  WARMUP_DUR = 600;
+  STAGE_1_DUR = 600;
+  STAGE_2_DUR = 600;
+  STAGE_3_DUR = 600;
+  STAGE_4_DUR = 600;
+  COOLDOWN_DUR = 300;
 }
 
 function onEvent(input, output, eventId) {
@@ -100,18 +100,6 @@ function onEvent(input, output, eventId) {
       currentTemplate = 't';
       debugTimer = 0;
       unload('_cm');
-    }
-  } else if (eventId === 2) { // 2 = Cycle stage duration (only in WARMUP)
-    if (state === STATE_WARMUP) {
-      stageDurIndex = (stageDurIndex + 1) % 3;
-      if (stageDurIndex === 0) { // 1 min stages
-        WARMUP_DUR = 60; STAGE_1_DUR = 60; STAGE_2_DUR = 60; STAGE_3_DUR = 60; STAGE_4_DUR = 30; COOLDOWN_DUR = 30;
-      } else if (stageDurIndex === 1) { // 5 min stages
-        WARMUP_DUR = 300; STAGE_1_DUR = 300; STAGE_2_DUR = 300; STAGE_3_DUR = 300; STAGE_4_DUR = 150; COOLDOWN_DUR = 150;
-      } else { // 10 min stages
-        WARMUP_DUR = 600; STAGE_1_DUR = 600; STAGE_2_DUR = 600; STAGE_3_DUR = 600; STAGE_4_DUR = 300; COOLDOWN_DUR = 300;
-      }
-      timeInState = 0; // Reset warmup time to start fresh with new duration
     }
   }
 }
