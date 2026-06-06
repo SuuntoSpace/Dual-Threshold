@@ -330,7 +330,10 @@ function getUserInterface(input, output) {
   return {
     template: currentTemplate || 't',
     zn: { input: '/Activity/Zones/HeartRate/CurrentZone' },
-    segm: 5
+    segm: 5,
+    currentHR: { input: '/Activity/Move/-1/Heartrate/Current' },
+    hrTarget: { input: '/Zapp/{zapp_index}/Output/hrTargetNum' },
+    stateNum: { input: '/Zapp/{zapp_index}/Output/stateNum' }
   };
 }
 

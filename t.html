@@ -1,10 +1,23 @@
 <uiView 
   onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
   onLoad="
-    var currentZoneSub;
-    function drawStageHeader(ctx, zone, segment) {
+    var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : Function('return this')());
+    g.g = g;
+    g.currentHR = 0;
+    g.hrTarget = 0;
+    g.stateNum = 0;
+    g.targetLow = 0;
+    g.targetHigh = 0;
+
+    g.drawStageHeader = function(ctx) {
       var cx = ctx.width / 2;
       var cy = ctx.width / 2;
+
+      var hrVal = Number(g.currentHR) || 0;
+      var targetVal = Number(g.hrTarget) || 0;
+      var stateVal = Number(g.stateNum) || 0;
+
+      // 1. Draw top curved yellow banner
       var r = ctx.width / 2 - 14;
       var dy = 0.15 * ctx.width - cy;
       if (r > Math.abs(dy)) {
@@ -16,40 +29,117 @@
         ctx.fillStyle = '#FFE322';
         ctx.fill();
       }
-      buildGenericGauge(ctx, zone, 0, 4, 1, segment);
-    }
-  "
-  onActivate="
-    currentZoneSub = $.subscribe('/Activity/Zones/HeartRate/CurrentZone', function(v) {
-      var colors = ['#FF2A55', '#36E4FF', '#6EE76D', '#FFDD33', '#FF9F33', '#FF5640'];
-      var color = colors[v] || '#FF2A55';
+
+      ctx.lineCap = 'round';
+      var gap = 0.03; // ~1.7 degrees gap on each side of the segment boundary (total 3.4 degrees gap)
+
+      // 2. Draw the 3 gauge segments (Blue, Green, Red)
+      // Segment 1 (Blue): Below target
+      var act1 = (stateVal !== 6 && g.targetLow > 0 && hrVal < g.targetLow);
+      ctx.lineWidth = act1 ? 8 : 4;
+      ctx.strokeStyle = act1 ? '#00A2FF' : '#005580';
+      ctx.beginPath();
+      ctx.arc(cx, cy, (ctx.width - ctx.lineWidth) / 2 - 2, 3 * Math.PI / 4 + gap, 5 * Math.PI / 4 - gap, false);
+      ctx.stroke();
+
+      // Segment 2 (Green): On target
+      var act2 = (stateVal !== 6 && g.targetLow > 0 && hrVal >= g.targetLow && hrVal <= g.targetHigh);
+      ctx.lineWidth = act2 ? 8 : 4;
+      ctx.strokeStyle = act2 ? '#6EE76D' : '#226622';
+      ctx.beginPath();
+      ctx.arc(cx, cy, (ctx.width - ctx.lineWidth) / 2 - 2, 5 * Math.PI / 4 + gap, 7 * Math.PI / 4 - gap, false);
+      ctx.stroke();
+
+      // Segment 3 (Red): Above target
+      var act3 = (stateVal !== 6 && g.targetLow > 0 && hrVal > g.targetHigh);
+      ctx.lineWidth = act3 ? 8 : 4;
+      ctx.strokeStyle = act3 ? '#FF2A55' : '#801424';
+      ctx.beginPath();
+      ctx.arc(cx, cy, (ctx.width - ctx.lineWidth) / 2 - 2, 7 * Math.PI / 4 + gap, 9 * Math.PI / 4 - gap, false);
+      ctx.stroke();
+
+      // 3. Draw the needle (white triangle pointing inwards to the center)
+      if (stateVal !== 6 && g.targetLow > 0 && hrVal > 0) {
+        var angle = 0;
+        if (hrVal < g.targetLow) {
+          var hrMin = g.targetLow - 30;
+          var val = hrVal < hrMin ? hrMin : hrVal;
+          var pct = (val - hrMin) / 30;
+          angle = 3 * Math.PI / 4 + pct * (Math.PI / 2);
+        } else if (hrVal <= g.targetHigh) {
+          var range = g.targetHigh - g.targetLow;
+          var pct = range > 0 ? (hrVal - g.targetLow) / range : 0.5;
+          angle = 5 * Math.PI / 4 + pct * (Math.PI / 2);
+        } else {
+          var hrMax = g.targetHigh + 30;
+          var val = hrVal > hrMax ? hrMax : hrVal;
+          var pct = (val - g.targetHigh) / 30;
+          angle = 7 * Math.PI / 4 + pct * (Math.PI / 2);
+        }
+
+        var rb = ctx.width / 2 - 3;  // Base of needle (on top of the corona)
+        var rt = ctx.width / 2 - 16; // Tip of needle (pointing inwards to the center)
+        var baseHalfWidth = 0.05;    // Width in radians (wider base)
+
+        var xTip = cx + rt * Math.cos(angle);
+        var yTip = cy + rt * Math.sin(angle);
+        var xBase1 = cx + rb * Math.cos(angle - baseHalfWidth);
+        var yBase1 = cy + rb * Math.sin(angle - baseHalfWidth);
+        var xBase2 = cx + rb * Math.cos(angle + baseHalfWidth);
+        var yBase2 = cy + rb * Math.sin(angle + baseHalfWidth);
+
+        ctx.beginPath();
+        ctx.moveTo(xTip, yTip);
+        ctx.lineTo(xBase1, yBase1);
+        ctx.lineTo(xBase2, yBase2);
+        ctx.closePath();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    };
+
+    g.updateHRColors = function() {
+      if (g.stateNum === 6 || g.targetLow <= 0 || g.currentHR <= 0) {
+        setStyle('#hr-heart-ico', 'color', '#FF2A55');
+        setStyle('#hr-val-text', 'color', '#FFFFFF');
+        return;
+      }
+      var color = '#6EE76D'; // Green
+      if (g.currentHR < g.targetLow) {
+        color = '#00A2FF'; // Blue
+      } else if (g.currentHR > g.targetHigh) {
+        color = '#FF2A55'; // Red
+      }
       setStyle('#hr-heart-ico', 'color', color);
-    });
+      setStyle('#hr-val-text', 'color', color);
+    };
   "
-  onDeactivate="
-    $.unsubscribe(currentZoneSub);
-  "
+  onActivate=""
+  onDeactivate=""
 >
     <div style="background-color:#111111; width:100%; height:100%; position:absolute; top:0; left:0;">
         <!-- Corona de Cardio (Lienzo Directo con Cabecera Curva integrada y Corona en Capa de fondo) -->
-        <object type="canvas" class="zone-gauge-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => drawStageHeader(ctx, zn, segm);" />
+        <object type="canvas" id="hrGauge" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => g.drawStageHeader(ctx);" />
 
         <!-- Topmost: transparent container for Stage Name text -->
         <div style="top:4%; left:12%; width:76%; height:11%; position:absolute;">
             <!-- 1. Stage Name -->
             <div class="sp-t-m p-hc" style="top:calc(58% - 50%e); color:#000000; font-weight:bold; position:absolute;">
-                <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'Warm Up,Stable,Stable,Stable Stage,Peak Stage,Cool Down,TEST DONE'.split(',')[x] || 'Warm Up'" default="---" />
+                <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'Warm Up,Stable,Stable,\\xa0Stable Stage,Peak Stage,Cool Down,TEST DONE'.split(',')[x] || 'Warm Up'" default="---" />
             </div>
         </div>
 
-        <!-- 2. Mode Label: ZONAS FC -->
+        <!-- 2. Mode Label: HR ZONES -->
         <div class="f-s p-hc" style="top:calc(19% - 50%e); font-size:11px; font-weight:bold; color:#FFE322; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/testModeNum" outputFormat="script x => x === 0 ? '- ZONAS FC -' : ''" default="               " />
+            <eval input="/Zapp/{zapp_index}/Output/testModeNum" outputFormat="script x => x === 0 ? '- HR ZONES -' : ''" default="               " />
         </div>
 
         <!-- 3. Target HR Range -->
         <div class="f-l f-num p-hc" style="top:calc(28% - 50%e); font-size:28px; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" />
+            <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="var parts = targetData.split('-'); if (parts.length === 2) { g.targetLow = Number(parts[0]) || 0; g.targetHigh = Number(parts[1]) || 0; } else { g.targetLow = 0; g.targetHigh = 0; } g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
         </div>
 
         <!-- 4. Recommended HR Label -->
@@ -69,10 +159,10 @@
         <!-- 6. Current HR (Right side) -->
         <!-- Value -->
         <div class="sp-vertical-center" style="top:calc(50% - 50%e); left:calc(70% - 50%e); position:absolute;">
-            <span id="hr-heart-ico" class="f-ico" style="color:#FF2A55;">&#xF101;</span>
-            <span class="f-num" style="font-size:28px; margin-left:4px;">
-                <eval input="/Activity/Move/-1/Heartrate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
+            <span id="hr-val-text" class="f-num" style="font-size:28px; color:#FFFFFF;">
+                <eval input="/Activity/Move/-1/Heartrate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.currentHR = Number(targetData) || 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
             </span>
+            <span id="hr-heart-ico" class="f-ico" style="color:#FF2A55; margin-left:4px;">&#xF101;</span>
         </div>
         <!-- Label -->
         <div class="f-s cm-mid sp-vertical-center" style="top:calc(60% - 50%e); left:calc(70% - 50%e); position:absolute;">Heart Rate</div>
@@ -85,7 +175,7 @@
 
         <!-- 8. Step Indicator -->
         <div class="f-s p-hc" style="top:calc(93% - 50%e); font-size:18px; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'PRE,1/4,2/4,3/4,4/4,POST,'.split(',')[x] || 'PRE'" default="---" />
+            <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'PRE,1/4,2/4,3/4,4/4,POST,DONE'.split(',')[x] || 'PRE'" default="---" onValueChanged="var steps = ['PRE','1/4','2/4','3/4','4/4','POST','DONE']; var idx = steps.indexOf(targetData); g.stateNum = idx !== -1 ? idx : 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
         </div>
 
         <!-- Button Navigation -->
