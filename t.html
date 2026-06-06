@@ -2,6 +2,22 @@
   onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
   onLoad="
     var currentZoneSub;
+    function drawStageHeader(ctx, zone, segment) {
+      var cx = ctx.width / 2;
+      var cy = ctx.width / 2;
+      var r = ctx.width / 2 - 14;
+      var dy = 0.15 * ctx.width - cy;
+      if (r > Math.abs(dy)) {
+        var end = Math.asin(dy / r);
+        var start = -Math.PI - end;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, start, end, false);
+        ctx.closePath();
+        ctx.fillStyle = '#FFE322';
+        ctx.fill();
+      }
+      buildGenericGauge(ctx, zone, 0, 4, 1, segment);
+    }
   "
   onActivate="
     currentZoneSub = $.subscribe('/Activity/Zones/HeartRate/CurrentZone', function(v) {
@@ -15,12 +31,13 @@
   "
 >
     <div style="background-color:#111111; width:100%; height:100%; position:absolute; top:0; left:0;">
-        <!-- Corona de Cardio (Lienzo Directo sin la Aguja) -->
-        <object type="canvas" class="zone-gauge-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => buildGenericGauge(ctx, zn, 0, 4, 1, segm);" />
-        <!-- Topmost: background -->
-        <div style="top:0%; left:0%; width:100%; height:15%; background-color:#FFE322; position:absolute;">
+        <!-- Corona de Cardio (Lienzo Directo con Cabecera Curva integrada y Corona en Capa de fondo) -->
+        <object type="canvas" class="zone-gauge-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => drawStageHeader(ctx, zn, segm);" />
+
+        <!-- Topmost: transparent container for Stage Name text -->
+        <div style="top:4%; left:12%; width:76%; height:11%; position:absolute;">
             <!-- 1. Stage Name -->
-            <div class="sp-t-m p-hc" style="top:calc(60% - 50%e); color:#000000; font-weight:bold; position:absolute;">
+            <div class="sp-t-m p-hc" style="top:calc(58% - 50%e); color:#000000; font-weight:bold; position:absolute;">
                 <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'Warm Up,Stable,Stable,Stable Stage,Peak Stage,Cool Down,TEST DONE'.split(',')[x] || 'Warm Up'" default="---" />
             </div>
         </div>
