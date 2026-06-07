@@ -128,7 +128,7 @@
         <div style="top:4%; left:12%; width:76%; height:11%; position:absolute;">
             <!-- 1. Stage Name -->
             <div class="sp-t-m p-hc" style="top:calc(58% - 50%e); color:#000000; font-weight:bold; position:absolute;">
-                <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'Warm Up,Stable,Stable, Stable Stage,Peak Stage,Cool Down,TEST DONE'.split(',')[x] || 'Warm Up'" default="---" />
+                <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => x === 3 ? String.fromCharCode(160) + 'Stable Stage' : ('Warm Up,Stable,Stable,Stable Stage,Peak Stage,Cool Down,TEST DONE'.split(',')[x] || 'Warm Up')" default="---" />
             </div>
         </div>
 
