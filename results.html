@@ -1,61 +1,80 @@
-<uiView onFlickDown="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');">
+<uiView 
+  onFlickDown="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" 
+  onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+  onLoad="
+    var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : Function('return this')());
+    g.g = g;
+  "
+>
   <div style="background-color:#111111; width:100%; height:100%; position:absolute; top:0; left:0;">
 
-      <!-- Title -->
-      <div class="sp-t-s p-hc" style="top:calc(12% - 50%e); color:#FFE322; font-weight:bold; position:absolute;">
-          UMBRALES LACTATO
+      <!-- Title Banner -->
+      <div style="top:0; left:0; width:100%; height:22%; background-color:#FFE322; position:absolute;"></div>
+
+      <!-- Title over yellow banner -->
+      <div style="top:4%; left:12%; width:76%; height:17%; position:absolute;">
+          <div class="sp-t-m p-hc" style="top:calc(30% - 50%e); color:#000000; font-weight:bold; position:absolute;">
+              LACTATE
+          </div>
+          <div class="sp-t-m p-hc" style="top:calc(75% - 50%e); color:#000000; font-weight:bold; position:absolute;">
+              THRESHOLDS
+          </div>
       </div>
 
       <!-- ==================== SECCION LT1 (AERO) ==================== -->
-      <div class="f-s" style="top:calc(22% - 50%e); left:15%; position:absolute; color:#00FF78; font-weight:bold;">
-          LT1 (Aeróbico)
+      <div class="f-s" style="top:calc(26% - 50%e); left:15%; position:absolute; color:#00FF78; font-weight:bold;">
+          LT1 (Aerobic)
       </div>
 
-      <!-- LT1 HR -->
-      <div class="sp-vertical-center" style="top:calc(32% - 50%e); left:calc(30% - 50%e); position:absolute;">
-          <span class="f-num" style="font-size:24px; color:#FFFFFF;">
-              <eval input="/Zapp/{zapp_index}/Output/lt1HR" outputFormat="HeartRate_Fourdigits" default="---" />
-          </span>
-          <span style="font-size:12px; color:#AAAAAA; margin-left:4px;">bpm</span>
-      </div>
-
-      <!-- LT1 Pace -->
-      <div class="sp-vertical-center" style="top:calc(32% - 50%e); left:calc(68% - 50%e); position:absolute;">
+      <!-- LT1 Pace (Left column, matching main screen) -->
+      <div class="sp-vertical-center" style="top:calc(35% - 50%e); left:calc(30% - 50%e); position:absolute;">
+          <span class="f-ico" style="color:#00FF78; margin-right:4px;">&#xF103;</span>
           <span class="f-num" style="font-size:24px; color:#FFFFFF;">
               <eval input="/Zapp/{zapp_index}/Output/lt1Pace" outputFormat="Pace_Fourdigits" default="--:--" />
           </span>
-          <span style="font-size:12px; color:#AAAAAA; margin-left:4px;">/km</span>
+      </div>
+
+      <!-- LT1 HR (Right column, matching main screen) -->
+      <div class="sp-vertical-center" style="top:calc(35% - 50%e); left:calc(70% - 50%e); position:absolute;">
+          <span class="f-num" style="font-size:24px; color:#FFFFFF;">
+              <eval input="/Zapp/{zapp_index}/Output/lt1HR" outputFormat="HeartRate_Fourdigits" default="---" />
+          </span>
+          <span class="f-ico" style="color:#00FF78; margin-left:4px;">&#xF101;</span>
       </div>
 
       <!-- Separator Line -->
-      <div class="p-hc" style="top:42%; width:80%; height:1px; background-color:#333333; position:absolute;"></div>
+      <div class="p-hc" style="top:42%; width:80%; height:1px; background-color:#555555; position:absolute;"></div>
 
       <!-- ==================== SECCION LT2 (ANAERO) ==================== -->
-      <div class="f-s" style="top:calc(50% - 50%e); left:15%; position:absolute; color:#FF2A55; font-weight:bold;">
-          LT2 (Anaeróbico)
+      <div class="f-s" style="top:calc(49% - 50%e); left:15%; position:absolute; color:#FF2A55; font-weight:bold;">
+          LT2 (Anaerobic)
       </div>
 
-      <!-- LT2 HR -->
-      <div class="sp-vertical-center" style="top:calc(60% - 50%e); left:calc(30% - 50%e); position:absolute;">
-          <span class="f-num" style="font-size:24px; color:#FFFFFF;">
-              <eval input="/Zapp/{zapp_index}/Output/lt2HR" outputFormat="HeartRate_Fourdigits" default="---" />
-          </span>
-          <span style="font-size:12px; color:#AAAAAA; margin-left:4px;">bpm</span>
-      </div>
-
-      <!-- LT2 Pace -->
-      <div class="sp-vertical-center" style="top:calc(60% - 50%e); left:calc(68% - 50%e); position:absolute;">
+      <!-- LT2 Pace (Left column, matching main screen) -->
+      <div class="sp-vertical-center" style="top:calc(58% - 50%e); left:calc(30% - 50%e); position:absolute;">
+          <span class="f-ico" style="color:#FF2A55; margin-right:4px;">&#xF103;</span>
           <span class="f-num" style="font-size:24px; color:#FFFFFF;">
               <eval input="/Zapp/{zapp_index}/Output/lt2Pace" outputFormat="Pace_Fourdigits" default="--:--" />
           </span>
-          <span style="font-size:12px; color:#AAAAAA; margin-left:4px;">/km</span>
       </div>
 
-      <!-- LT2 Power (Symmetrical: label left, W value right) -->
-      <div class="f-s sp-vertical-center" style="top:calc(74% - 50%e); left:calc(30% - 50%e); position:absolute; color:#AAAAAA;">
-          Potencia
+      <!-- LT2 HR (Right column, matching main screen) -->
+      <div class="sp-vertical-center" style="top:calc(58% - 50%e); left:calc(70% - 50%e); position:absolute;">
+          <span class="f-num" style="font-size:24px; color:#FFFFFF;">
+              <eval input="/Zapp/{zapp_index}/Output/lt2HR" outputFormat="HeartRate_Fourdigits" default="---" />
+          </span>
+          <span class="f-ico" style="color:#FF2A55; margin-left:4px;">&#xF101;</span>
       </div>
-      <div class="sp-vertical-center" style="top:calc(74% - 50%e); left:calc(68% - 50%e); position:absolute;">
+
+      <!-- Separator Line 2 -->
+      <div class="p-hc" style="top:64%; width:80%; height:1px; background-color:#555555; position:absolute;"></div>
+
+      <!-- LT2 Power (Centered at the bottom) -->
+      <div class="f-s p-hc" style="top:calc(67% - 50%e); color:#AAAAAA; position:absolute;">
+          Power
+      </div>
+      <div class="sp-vertical-center p-hc" style="top:calc(78% - 50%e); position:absolute;">
+          <span class="f-ico" style="color:#FFDD33; margin-right:6px;">&#xF108;</span>
           <span class="f-num" style="font-size:26px; color:#FFFFFF;">
               <eval input="/Zapp/{zapp_index}/Output/lt2Power" outputFormat="Power_Fourdigits" default="---" />
           </span>
@@ -63,8 +82,8 @@
       </div>
 
       <!-- Footer Hint -->
-      <div class="f-s p-hc" style="top:calc(88% - 50%e); color:#AAAAAA; font-size:12px; position:absolute;">
-          (Guarda la actividad)
+      <div class="f-s p-hc" style="top:calc(87% - 50%e); color:#FF2A55; font-size:12px; position:absolute;">
+          (Keep the activity)
       </div>
 
       <!-- Button Navigation -->
