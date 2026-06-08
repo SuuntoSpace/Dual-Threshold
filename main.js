@@ -10,7 +10,7 @@ var STATE_WARMUP, STATE_STAGE_1, STATE_STAGE_2, STATE_STAGE_3, STATE_STAGE_4,
   lt1_hr, lt1_pace, lt2_hr, lt2_pace, lt2_power, currentTemplate, uiLoaded,
   h1_hrSum, h1_spdSum, h1_count, h1_spdCount, h2_hrSum, h2_spdSum, h2_count, h2_spdCount, stage_results,
   zs_active, testModeNum, dfa_current, debugTimer, stageDurIndex, lt1_detected, lt2_detected,
-  h3_pwrSum, h3_pwrCount, isPaused;
+  h3_pwrSum, h3_pwrCount, isPaused, outOfRangeSeconds, alertShowTimer;
 
 function onLoad(input, output) {
   STATE_WARMUP = 0;
@@ -52,6 +52,8 @@ function onLoad(input, output) {
   lt1_detected = false;
   lt2_detected = false;
   isPaused = 0;
+  outOfRangeSeconds = 0;
+  alertShowTimer = 0;
 }
 
 function onExerciseStart(input, output) {
@@ -72,6 +74,8 @@ function onExerciseStart(input, output) {
   lt1_detected = false;
   lt2_detected = false;
   isPaused = 0;
+  outOfRangeSeconds = 0;
+  alertShowTimer = 0;
 
   WARMUP_DUR = 600;
   STAGE_1_DUR = 600;
@@ -203,6 +207,16 @@ function evaluate(input, output) {
     debugTimer = 0;
   }
 
+  if (currentTemplate === 'alert') {
+    alertShowTimer--;
+    if (alertShowTimer <= 0) {
+      currentTemplate = 't';
+      unload('_cm');
+    }
+  } else {
+    alertShowTimer = 0;
+  }
+
   var shouldAdvance = false;
   timeInState++;
 
@@ -315,6 +329,7 @@ function evaluate(input, output) {
     h1_hrSum = 0; h1_spdSum = 0; h1_count = 0; h1_spdCount = 0;
     h2_hrSum = 0; h2_spdSum = 0; h2_count = 0; h2_spdCount = 0;
     h3_pwrSum = 0; h3_pwrCount = 0;
+    outOfRangeSeconds = 0;
   }
 
   output.stateNum = state;
@@ -334,6 +349,25 @@ function evaluate(input, output) {
   }
 
   var hr = Math.round((input.HeartRate || 0) * 60);
+
+  if (state !== STATE_DONE && hr > 0 && targetLow > 0 && targetHigh > 0) {
+    if (hr < Math.round(targetLow) || hr > Math.round(targetHigh)) {
+      if (currentTemplate !== 'alert') {
+        outOfRangeSeconds++;
+        if (outOfRangeSeconds >= 20) {
+          playIndication("Interval");
+          currentTemplate = 'alert';
+          alertShowTimer = 5;
+          outOfRangeSeconds = 0;
+          unload('_cm');
+        }
+      }
+    } else {
+      outOfRangeSeconds = 0;
+    }
+  } else {
+    outOfRangeSeconds = 0;
+  }
   var zone = 0;
   if (maxHR > 0 && hr > 0) {
     var limit5 = Math.round(maxHR * 0.87);

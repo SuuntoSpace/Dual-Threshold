@@ -102,6 +102,21 @@ To provide clarity on the application's internal behavior, here are the details 
 
 ---
 
+## 🔊 Out-of-Range Heart Rate Warnings (Alerts)
+
+To keep you within the recommended physiological zone during the test, the app monitors heart rate alignment:
+* **Trigger Mechanism**: If your heart rate stays outside the recommended range (`hr < targetLow` or `hr > targetHigh`) for **20 consecutive seconds**, the app triggers a physical and visual alert.
+* **Physical Alert**: Emits a double beep and vibration on the watch using the native `Interval` indication.
+* **Visual Alert Screen (`alert.html`)**: Automatically overrides the workout view for **5 seconds** (or until manually dismissed by button press or swiping) to display:
+  * **Dynamic Banner Color**: Red for `TOO HIGH!`, Blue for `TOO LOW!`, or Yellow for warning.
+  * **Alert Info Pill**: Displays `20s ALERT` to indicate the duration of deviation.
+  * **Row 1**: Live Heart Rate (e.g. `155 bpm`) with a heart icon.
+  * **Row 2**: Recommended Heart Rate Target Range (e.g. `124-142 bpm`).
+  * **Row 3**: Current Pace (e.g. `5'12 /km`) with a pace icon.
+* **Reset Rules**: Returning to target heart rate range or transitioning to a new stage immediately resets the 20-second counter to `0`.
+
+---
+
 ## 🔧 Diagnostic Mode (Debug)
 
 The app includes a diagnostic mode to view internal variables live and verify algorithm calculations during development.
