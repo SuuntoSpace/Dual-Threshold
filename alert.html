@@ -1,0 +1,158 @@
+<uiView 
+  onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+  onFlickDown="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+  onLoad="
+    var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : Function('return this')());
+    g.g = g;
+    g.currentHR = g.currentHR || 0;
+    g.hrTarget = g.hrTarget || 0;
+    g.targetLow = g.targetLow || 0;
+    g.targetHigh = g.targetHigh || 0;
+
+    g.drawAlertBackground = function(ctx) {
+      var cx = ctx.width / 2;
+      var cy = ctx.width / 2;
+
+      var hrVal = Number(g.currentHR) || 0;
+      var targetVal = Number(g.hrTarget) || 0;
+      var lowVal = Number(g.targetLow) || 0;
+      var highVal = Number(g.targetHigh) || 0;
+
+      if (lowVal === 0 && targetVal > 0) {
+        lowVal = Math.floor(targetVal / 1000);
+        highVal = targetVal % 1000;
+      }
+
+      var isHigh = (hrVal > 0 && highVal > 0 && hrVal > highVal);
+      var isLow = (hrVal > 0 && lowVal > 0 && hrVal < lowVal);
+
+      var alertColor = '#FFE322'; // Yellow warning
+      if (isHigh) alertColor = '#FF2A55'; // Red (Too High)
+      if (isLow) alertColor = '#00A2FF'; // Blue (Too Low)
+
+      // 1. Draw top curved warning banner (15% height)
+      var rHeader = ctx.width / 2 - 14;
+      var dyHeader = 0.15 * ctx.width - cy;
+      if (rHeader > Math.abs(dyHeader)) {
+        var end = Math.asin(dyHeader / rHeader);
+        var start = -Math.PI - end;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rHeader, start, end, false);
+        ctx.closePath();
+        ctx.fillStyle = alertColor;
+        ctx.fill();
+      }
+
+      // 2. Draw bottom bubble (starts at 38% height)
+      var yBubble = 0.38 * ctx.width;
+      var dyBubble = yBubble - cy;
+      var rBubble = ctx.width / 2 - 4;
+      if (rBubble > Math.abs(dyBubble)) {
+        var startAngle = Math.asin(dyBubble / rBubble);
+        var endAngle = Math.PI - startAngle;
+        
+        ctx.beginPath();
+        var xLeft = cx + rBubble * Math.cos(endAngle);
+        var yLeft = cy + rBubble * Math.sin(endAngle);
+        ctx.moveTo(xLeft, yLeft);
+        ctx.lineTo(cx + rBubble * Math.cos(startAngle), cy + rBubble * Math.sin(startAngle));
+        ctx.arc(cx, cy, rBubble, startAngle, endAngle, false);
+        ctx.closePath();
+        ctx.fillStyle = '#2A3C72'; // Slate blue bubble
+        ctx.fill();
+      }
+    };
+  "
+  onActivate=""
+  onDeactivate=""
+>
+    <div style="background-color:#111111; width:100%; height:100%; position:absolute; top:0; left:0;">
+        <!-- Canvas for the curved header and bubble background -->
+        <object type="canvas" id="alertBgCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => g.drawAlertBackground(ctx);" />
+
+        <!-- 1. Header Text over the colored banner -->
+        <div style="top:4%; left:12%; width:76%; height:11%; position:absolute;">
+            <div class="sp-t-m p-hc" style="top:calc(58% - 50%e); color:#000000; font-weight:bold; position:absolute;">
+                <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="script x => {
+                    var val = Math.round(x * 60);
+                    var target = g.hrTarget;
+                    if (target > 0) {
+                        var low = Math.floor(target / 1000);
+                        var high = target % 1000;
+                        if (val < low) return 'TOO LOW!';
+                        if (val > high) return 'TOO HIGH!';
+                    }
+                    return 'WARNING';
+                }" default="WARNING" />
+            </div>
+        </div>
+
+        <!-- 2. Step and Warning status pill (centered) -->
+        <div style="top:18%; left:20%; width:60%; height:10%; position:absolute;">
+            <!-- Left part: Out-of-range duration (20s) -->
+            <div style="left:0; width:45%; height:100%; background-color:#444444; position:absolute; border-radius:8px;">
+                <div class="p-hc" style="color:#FFFFFF; font-weight:bold; font-size:16px; top:calc(50% - 50%e); left:calc(50% - 50%e); position:absolute;">
+                    20s
+                </div>
+            </div>
+            <!-- Right part: ALERT text -->
+            <div style="left:50%; width:50%; height:100%; position:absolute;" class="sp-vertical-center">
+                <div class="f-s" style="color:#FF2A55; font-weight:bold; top:calc(50% - 50%e); position:absolute;">
+                    ALERT
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: Current Heart Rate -->
+        <!-- Label and Icon -->
+        <div style="top:calc(46% - 50%e); left:15%; position:absolute;" class="sp-vertical-center">
+            <span class="f-ico" style="color:#FFFFFF; font-size:18px;">&#xF101;</span>
+            <span class="f-s" style="color:#AAAAAA; margin-left:4px; font-weight:bold; font-size:11px;">HR</span>
+        </div>
+        <!-- Value -->
+        <div style="top:calc(46% - 50%e); left:45%; position:absolute;" class="sp-vertical-center">
+            <span class="f-num" style="color:#FFFFFF; font-size:32px; font-weight:bold;">
+                <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.currentHR = Number(targetData) || 0; control('#alertBgCanvas', 'REFRESH');" />
+            </span>
+        </div>
+        <!-- Unit -->
+        <div style="top:calc(46% - 50%e); left:78%; position:absolute;" class="sp-vertical-center">
+            <span class="f-s" style="color:#AAAAAA; font-weight:bold; font-size:12px;">bpm</span>
+        </div>
+
+        <!-- Row 2: Target Range -->
+        <!-- Label -->
+        <div style="top:calc(62% - 50%e); left:15%; position:absolute;" class="sp-vertical-center">
+            <span class="f-s" style="color:#AAAAAA; font-weight:bold; font-size:11px;">TARGET</span>
+        </div>
+        <!-- Value -->
+        <div style="top:calc(62% - 50%e); left:45%; position:absolute;" class="sp-vertical-center">
+            <span class="f-num" style="color:#FFFFFF; font-size:26px; font-weight:bold;">
+                <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="var parts = targetData.split('-'); if (parts.length === 2) { g.targetLow = Number(parts[0]) || 0; g.targetHigh = Number(parts[1]) || 0; g.hrTarget = g.targetLow * 1000 + g.targetHigh; } else { g.targetLow = 0; g.targetHigh = 0; g.hrTarget = 0; } control('#alertBgCanvas', 'REFRESH');" />
+            </span>
+        </div>
+        <!-- Unit -->
+        <div style="top:calc(62% - 50%e); left:78%; position:absolute;" class="sp-vertical-center">
+            <span class="f-s" style="color:#AAAAAA; font-weight:bold; font-size:12px;">bpm</span>
+        </div>
+
+        <!-- Row 3: Current Pace -->
+        <!-- Label and Icon -->
+        <div style="top:calc(78% - 50%e); left:15%; position:absolute;" class="sp-vertical-center">
+            <span class="f-ico" style="color:#FFFFFF; font-size:18px;">&#xF103;</span>
+            <span class="f-s" style="color:#AAAAAA; margin-left:4px; font-weight:bold; font-size:11px;">PACE</span>
+        </div>
+        <!-- Value -->
+        <div style="top:calc(78% - 50%e); left:45%; position:absolute;" class="sp-vertical-center">
+            <span class="f-num" style="color:#FFFFFF; font-size:32px; font-weight:bold;">
+                <eval input="/Activity/Current/Speed" outputFormat="Pace_Fourdigits" default="--:--" />
+            </span>
+        </div>
+        <!-- Unit -->
+        <div style="top:calc(78% - 50%e); left:78%; position:absolute;" class="sp-vertical-center">
+            <span class="f-s" style="color:#AAAAAA; font-weight:bold; font-size:12px;">/km</span>
+        </div>
+
+        <!-- Button Navigation -->
+        </div>
+</uiView>
