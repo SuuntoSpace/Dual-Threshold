@@ -156,9 +156,15 @@ var saveStageResult = function (stageIndex) {
 var calculateThresholds = function () {
   var foundLT1 = false;
   var foundLT2 = false;
+
+  if (stage_results.length > 0) {
+    lt1_hr = stage_results[0].hr;
+    lt1_pace = stage_results[0].pace;
+  }
+
   for (var i = 0; i < stage_results.length; i++) {
     var sr = stage_results[i];
-    if (!foundLT1 && (sr.dec > 5.0 || i === 1)) {
+    if (!foundLT1 && i <= 1 && sr.dec > 5.0) {
       lt1_hr = sr.hr;
       lt1_pace = sr.pace;
       foundLT1 = true;
@@ -253,9 +259,11 @@ function evaluate(input, output) {
       stepLabel = "3/4";
       timeRem = STAGE_3_DUR - timeInState;
       accumulateDecoupling(input, STAGE_3_DUR);
-      if (input.Power && input.Power > 0) {
-        h3_pwrSum += input.Power;
-        h3_pwrCount++;
+      if (timeInState >= 60) {
+        if (input.Power && input.Power > 0) {
+          h3_pwrSum += input.Power;
+          h3_pwrCount++;
+        }
       }
       if (timeInState >= STAGE_3_DUR) {
         saveStageResult(3);
@@ -353,7 +361,7 @@ function getUserInterface(input, output) {
     template: currentTemplate || 't',
     zn: { input: '/Activity/Zones/HeartRate/CurrentZone' },
     segm: 5,
-    currentHR: { input: '/Activity/Move/-1/Heartrate/Current' },
+    currentHR: { input: '/Activity/Move/-1/HeartRate/Current' },
     hrTarget: { input: '/Zapp/{zapp_index}/Output/hrTargetNum' },
     stateNum: { input: '/Zapp/{zapp_index}/Output/stateNum' },
     hrZone: { input: '/Zapp/{zapp_index}/Output/hrZoneNum' }

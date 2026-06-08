@@ -78,9 +78,9 @@
           angle = 7 * Math.PI / 4 + pct * (Math.PI / 2);
         }
 
-        var rb = ctx.width / 2 - 3;  // Base of needle (on top of the corona)
-        var rt = ctx.width / 2 - 19; // Tip of needle (pointing inwards to the center)
-        var baseHalfWidth = 0.055;   // Width in radians (wider base)
+        var rb = ctx.width / 2 - 2;  // Base of needle (on top of the corona)
+        var rt = ctx.width / 2 - 20; // Tip of needle (pointing inwards to the center)
+        var baseHalfWidth = 0.065;   // Width in radians (wider base)
 
         var xTip = cx + rt * Math.cos(angle);
         var yTip = cy + rt * Math.sin(angle);
@@ -103,14 +103,15 @@
     };
 
     g.updateHRColors = function() {
-      setStyle('#hr-val-text', 'color', '#FFFFFF');
       if (g.stateNum === 6 || g.currentHR <= 0) {
         setStyle('#hr-heart-ico', 'color', '#FF2A55');
+        setStyle('#hr-val-text', 'color', '#FFFFFF');
         return;
       }
       var colors = ['#FFFFFF', '#36E4FF', '#6EE76D', '#FFE322', '#FF9F33', '#FF2A55'];
       var color = colors[g.currentZone] || '#FFFFFF';
       setStyle('#hr-heart-ico', 'color', color);
+      setStyle('#hr-val-text', 'color', color);
     };
   "
   onActivate=""
@@ -156,7 +157,7 @@
         <!-- Value -->
         <div class="sp-vertical-center" style="top:calc(50% - 50%e); left:calc(70% - 50%e); position:absolute;">
             <span id="hr-val-text" class="f-num" style="font-size:28px; color:#FFFFFF;">
-                <eval input="/Activity/Move/-1/Heartrate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.currentHR = Number(targetData) || 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
+                <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.currentHR = Number(targetData) || 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
             </span>
             <span id="hr-heart-ico" class="f-ico" style="color:#FF2A55; margin-left:4px;">&#xF101;</span>
         </div>

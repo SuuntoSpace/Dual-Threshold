@@ -9,7 +9,7 @@
   "in": [
     {
       "name": "HeartRate",
-      "source": "/Activity/Move/-1/Heartrate/Current",
+      "source": "/Activity/Move/-1/HeartRate/Current",
       "type": "subscribe"
     },
     {
