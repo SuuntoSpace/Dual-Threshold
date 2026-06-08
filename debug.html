@@ -47,15 +47,15 @@
 
       <div class="f-s p-hc" style="top:calc(82% - 50%e); color:#AAAAAA; font-size:12px; position:absolute;">(Deslizar arriba para alternar modo)</div>
       <div class="f-s p-hc" style="top:calc(88% - 50%e); color:#AAAAAA; font-size:12px; position:absolute;">(Botón SUPERIOR o CENTRAL para volver)</div>
-
       <!-- Button Navigation -->
-      <userInput>
-          <pushButton name="next" type="lock" longType="lock"
-              onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
-              onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
-          <pushButton name="up" type="lock" longType="lock"
-              onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
-              onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
-      </userInput>
+  <userInput>
+      <pushButton name="next" type="lock" longType="lock"
+          onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+          onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+      <pushButton name="up" type="lock" longType="lock"
+          onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+          onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+  </userInput>
+
   </div>
 </uiView>

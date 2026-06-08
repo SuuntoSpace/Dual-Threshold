@@ -383,16 +383,16 @@ function getSummaryOutputs(input, output) {
       value: output.lt2HR
     },
     {
-      id: 'lt1Pace',
-      name: "LT1 Pace",
-      format: 'Pace_Fourdigits',
-      value: output.lt1Pace
-    },
-    {
       id: 'lt2Pace',
       name: "LT2 Pace",
       format: 'Pace_Fourdigits',
       value: output.lt2Pace
+    },
+    {
+      id: 'lt2Power',
+      name: "Critical Power",
+      format: 'Power_Accurate',
+      value: output.lt2Power
     }
   ];
 }
