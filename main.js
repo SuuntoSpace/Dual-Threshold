@@ -10,10 +10,13 @@ var h1_hrSum, h1_spdSum, h1_count, h1_spdCount;
 var h2_hrSum, h2_spdSum, h2_count, h2_spdCount;
 var h3_pwrSum, h3_pwrCount, stage_results;
 var zs_active, dfa_current, debugTimer, outOfRangeSeconds, alertShowTimer;
+var countdownValue = 6, isCountdownActive = 0;
 var WARMUP_DUR = 600, STAGE_1_DUR = 600, STAGE_2_DUR = 600, STAGE_3_DUR = 600, STAGE_4_DUR = 300, COOLDOWN_DUR = 300;
 
 var resetApp = function () {
-  state = STATE_WARMUP; timeInState = 0; maxHR = 190; currentTemplate = 't'; stageDurIndex = 0;
+  state = STATE_WARMUP; timeInState = 0; maxHR = 190; currentTemplate = 'countdown'; stageDurIndex = 0;
+  countdownValue = 6;
+  isCountdownActive = 0;
   lt1_hr = 0; lt1_pace = 0; lt2_hr = 0; lt2_pace = 0; lt2_power = 0;
   h1_hrSum = 0; h1_spdSum = 0; h1_count = 0; h1_spdCount = 0;
   h2_hrSum = 0; h2_spdSum = 0; h2_count = 0; h2_spdCount = 0;
@@ -27,13 +30,86 @@ function onExerciseStart(input, output) { resetApp(); }
 function onExercisePause(input, output) { isPaused = 1; }
 function onExerciseContinue(input, output) { isPaused = 0; }
 
+var tickCountdown = function () {
+  if (isCountdownActive === 0) return;
+
+  switch (countdownValue) {
+    case 6:
+      countdownValue = 5;
+      break;
+    case 5:
+      countdownValue = 4;
+      break;
+    case 4:
+      countdownValue = 3;
+      break;
+    case 3:
+      countdownValue = 2;
+      break;
+    case 2:
+      countdownValue = 1;
+      break;
+    case 1:
+      countdownValue = 0;
+      playIndication("Confirm");
+      break;
+    case 0:
+      countdownValue = -1;
+      break;
+    case -1:
+      countdownValue = -2;
+      currentTemplate = 't';
+      unload('_cm');
+      break;
+  }
+};
+
+var evaluateCountdown = function (input, output) {
+  output.stateNum = state;
+  output.hrTargetNum = 0;
+  output.timeRemaining = 0;
+  output.testModeNum = 0;
+  output.dfaCurrent = 0;
+  output.hrZoneNum = 0;
+  output.lt1HR = 0;
+  output.lt2HR = 0;
+  output.lt1Pace = 0;
+  output.lt2Pace = 0;
+  output.lt2Power = 0;
+
+  tickCountdown();
+
+  if (countdownValue === 6) {
+    output.countdown = 5;
+  } else if (countdownValue >= 0) {
+    output.countdown = countdownValue;
+  } else if (countdownValue === -1) {
+    output.countdown = 0;
+  } else {
+    output.countdown = -2;
+  }
+};
+
+var handleCountdownEvent = function () {
+  if (isCountdownActive === 0) {
+    isCountdownActive = 1;
+    unload('_cm');
+  } else {
+    currentTemplate = 't';
+    countdownValue = -2;
+    unload('_cm');
+  }
+};
+
 function onEvent(input, output, eventId) {
   if (eventId === 1) {
     if (state === STATE_DONE) {
       if (currentTemplate !== 'results') { currentTemplate = 'results'; unload('_cm'); }
       return;
     }
-    if (currentTemplate === 't') {
+    if (currentTemplate === 'countdown') {
+      handleCountdownEvent();
+    } else if (currentTemplate === 't') {
       if (DEBUG_MODE === 1) { currentTemplate = 'debug'; debugTimer = 0; unload('_cm'); }
     } else {
       currentTemplate = 't'; debugTimer = 0; unload('_cm');
@@ -78,7 +154,14 @@ var calculateThresholds = function () {
 };
 
 function evaluate(input, output) {
-  if (state === undefined || isPaused === 1) return;
+  if (state === undefined) return;
+
+  if (currentTemplate === 'countdown') {
+    evaluateCountdown(input, output);
+    return;
+  }
+
+  if (isPaused === 1) return;
 
   if (currentTemplate === 'debug') {
     debugTimer++;
@@ -172,6 +255,7 @@ function evaluate(input, output) {
   output.testModeNum = 0;
   output.dfaCurrent = 0;
   output.hrZoneNum = zone;
+  output.countdown = countdownValue;
 
   if (state >= STATE_COOLDOWN) {
     output.lt1HR = Math.round(lt1_hr * 60) / 60;
@@ -190,7 +274,8 @@ function getUserInterface(input, output) {
     currentHR: { input: '/Activity/Move/-1/HeartRate/Current' },
     hrTarget: { input: '/Zapp/{zapp_index}/Output/hrTargetNum' },
     stateNum: { input: '/Zapp/{zapp_index}/Output/stateNum' },
-    hrZone: { input: '/Zapp/{zapp_index}/Output/hrZoneNum' }
+    hrZone: { input: '/Zapp/{zapp_index}/Output/hrZoneNum' },
+    countdown: { input: '/Zapp/{zapp_index}/Output/countdown' }
   };
 }
 

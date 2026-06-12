@@ -73,6 +73,11 @@
       "name": "hrZoneNum",
       "log": false,
       "shownName": "HR Zone Index"
+    },
+    {
+      "name": "countdown",
+      "log": false,
+      "shownName": "Countdown Start"
     }
   ],
   "template": [
@@ -87,6 +92,9 @@
     },
     {
       "name": "alert.html"
+    },
+    {
+      "name": "countdown.html"
     }
   ]
 }
