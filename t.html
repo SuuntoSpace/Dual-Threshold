@@ -180,5 +180,11 @@
             <eval input="/Zapp/{zapp_index}/Output/hrZoneNum" outputFormat="script x => x" default="0" onValueChanged="g.currentZone = Number(targetData) || 0; g.updateHRColors();" />
         </div>
         <!-- Button Navigation -->
+        <userInput>
+            <pushButton name="up" type="lock" longType="lock"
+                onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+                onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+        </userInput>
+
         </div>
         </uiView>
