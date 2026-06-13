@@ -1,66 +1,94 @@
-<uiView
-  onLoad="
+<uiView onLoad="
     var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : Function('return this')());
     g.g = g;
     g.countVal = 5;
     g.animTick = 0;
 
-    g.isNeg = function(num) {
-      return num.toString().charAt(0) === '-';
-    };
-
-    g.isPosOrZero = function(num) {
-      return num.toString().charAt(0) !== '-';
-    };
-
-    g.getEcgY = function(x_canvas) {
-      var w = g.w_val || 454;
-      var x_orig = x_canvas * (576 / w);
-      var val = 0;
-      
-      if (g.isPosOrZero(x_orig - 160)) {
-        if (g.isPosOrZero(380 - x_orig)) {
-          if (g.isNeg(x_orig - 245)) {
-            val = Math.sin((x_orig - 160) / 85 * Math.PI) * 61;
-          } else if (g.isNeg(x_orig - 286)) {
-            val = Math.sin((x_orig - 245) / 41 * Math.PI) * -80;
-          } else if (g.isNeg(x_orig - 328)) {
-            if (g.isNeg(x_orig - 312)) {
-              var t = (x_orig - 286) / 26;
-              val = 139 * (t * t);
-            } else {
-              val = 139 * (328 - x_orig) / 16;
-            }
-          } else if (g.isNeg(x_orig - 345)) {
-            val = Math.sin((x_orig - 328) / 17 * Math.PI) * -13;
-          } else {
-            val = Math.sin((x_orig - 345) / 35 * Math.PI) * 52;
-          }
-        }
+    g.getEcgY = function(x, w) {
+      var x_orig = x * (576 / w);
+      if (160 > x_orig || x_orig > 380) {
+        return 0;
       }
-      return -val * (w / 576);
+      var val = 0;
+      if (245 > x_orig) {
+        val = 61 * Math.sin((x_orig - 160) / 85 * Math.PI);
+      } else if (286 > x_orig) {
+        val = -80 * Math.sin((x_orig - 245) / 41 * Math.PI);
+      } else if (328 > x_orig) {
+        if (312 > x_orig) {
+          var t = (x_orig - 286) / 26;
+          val = 139 * t * t;
+        } else {
+          val = 139 * (328 - x_orig) / 16;
+        }
+      } else if (345 > x_orig) {
+        val = -13 * Math.sin((x_orig - 328) / 17 * Math.PI);
+      } else {
+        val = 52 * Math.sin((x_orig - 345) / 35 * Math.PI);
+      }
+      var scale = w / 576;
+      return 0 - val * scale;
+    };
+
+    g.drawEcgPath = function(ctx, x1, x2, w, yPulse) {
+      var xStart = Math.floor(160 * w / 576);
+      var xEnd = Math.floor(380 * w / 576);
+      
+      ctx.moveTo(x1, yPulse + g.getEcgY(x1, w));
+      
+      if (x1 >= xEnd || xStart >= x2) {
+        ctx.lineTo(x2, yPulse + g.getEcgY(x2, w));
+        return;
+      }
+      
+      if (xStart > x1) {
+        ctx.lineTo(xStart, yPulse);
+      }
+      
+      var startLoop = x1 > xStart ? x1 : xStart;
+      var endLoop = xEnd > x2 ? x2 : xEnd;
+      
+      startLoop = Math.floor(startLoop / 8) * 8 + 8;
+      
+      for (var x = startLoop; endLoop > x; x += 8) {
+        ctx.lineTo(x, yPulse + g.getEcgY(x, w));
+      }
+      
+      ctx.lineTo(endLoop, yPulse + g.getEcgY(endLoop, w));
+      
+      if (x2 > xEnd) {
+        ctx.lineTo(x2, yPulse);
+      }
     };
 
     g.drawCountdownBg = function(ctx) {
       var w = ctx.width;
-      g.w_val = w;
+      if (!w || 100 > w) {
+        return;
+      }
+      
       var cx = w / 2;
       var cy = w / 2;
-      var rH = w / 2 - 14;
-      var dyH = 0.15 * w - cy;
+      
+      // Fondo negro base
+      ctx.fillStyle = '#111111';
+      ctx.fillRect(0, 0, w, w);
 
-      // 1. Banner amarillo
-      if (g.isPosOrZero(rH - Math.abs(dyH))) {
-        var endH = Math.asin(dyH / rH);
+      // Curved yellow header banner (matching t.html exactly)
+      var r = w / 2 - 14;
+      var dy = 0.15 * w - cy;
+      if (r >= Math.abs(dy)) {
+        var end = Math.asin(dy / r);
+        var start = -Math.PI - end;
         ctx.beginPath();
-        ctx.arc(cx, cy, rH, -Math.PI - endH, endH, false);
+        ctx.arc(cx, cy, r, start, end, false);
         ctx.closePath();
         ctx.fillStyle = '#FFE322';
         ctx.fill();
       }
 
-      // 2. Corchete 
-      if (g.isPosOrZero(g.countVal - 5)) {
+      // Draw top button indicator bracket if countdown hasn't started (g.countVal >= 5)
+      if (g.countVal >= 5) {
         var bx = cx + cx * 0.72;
         var by = cy - cy * 0.52;
         var bLen = 12;
@@ -73,99 +101,39 @@
         ctx.stroke();
       }
 
-      // ==========================================
-      // 3. ECG REALISTA DE ALTA PRECISIÓN (ANIMADO)
-      // ==========================================
-      var yPulse = cy + 50; 
-
-      ctx.lineWidth = 3;
+      var yPulse = cy + 80; // EFG un pelin mas abajo
       ctx.lineCap = 'round';
 
-      var cycleTicks = 15; // 1.5s ciclo completo (15 ticks a 10Hz)
+      var cycleTicks = 15; // 1.5 seconds sweep cycle (matching latido.mp4 exactly!)
       var currentTick = g.animTick % cycleTicks;
       var sweepX = (currentTick / cycleTicks) * w;
-      var gap = 12; 
+      var gap = 16;
 
-      // 1. Trazado de la onda nueva (hasta sweepX)
-      var lastColorNew = '';
-      for (var x = 0; g.isPosOrZero(sweepX - x); x += 2) {
-        var x_orig = x * (576 / w);
-        var color = '#00E5FF';
-        if (g.isNeg(x_orig - 245)) {
-          color = '#FF2975';
-        } else if (g.isPosOrZero(x_orig - 286)) {
-          if (g.isNeg(x_orig - 328)) {
-            color = '#FF2975';
-          }
-        }
-        
-        if (color !== lastColorNew) {
-          if (x !== 0) {
-            ctx.stroke();
-          }
-          ctx.beginPath();
-          ctx.strokeStyle = color;
-          ctx.moveTo(x - 2, yPulse + g.getEcgY(x - 2));
-          ctx.lineTo(x, yPulse + g.getEcgY(x));
-          lastColorNew = color;
-        } else {
-          ctx.lineTo(x, yPulse + g.getEcgY(x));
-        }
-      }
-      if (lastColorNew !== '') ctx.stroke();
+      // Draw left segment (active neon sweep)
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#36E4FF';
+      ctx.beginPath();
+      var sweepX_nearest = Math.round(sweepX / 4) * 4;
+      if (sweepX_nearest >= w) sweepX_nearest = Math.floor(w / 4) * 4;
+      if (0 > sweepX_nearest) sweepX_nearest = 0;
+      g.drawEcgPath(ctx, 0, sweepX_nearest, w, yPulse);
+      ctx.stroke();
 
-      // 2. Trazado de la onda vieja (desde sweepX + gap hasta w)
-      var lastColorOld = '';
-      for (var x = sweepX + gap; g.isPosOrZero(w - x); x += 2) {
-        var x_orig = x * (576 / w);
-        var color = '#00E5FF';
-        if (g.isNeg(x_orig - 245)) {
-          color = '#FF2975';
-        } else if (g.isPosOrZero(x_orig - 286)) {
-          if (g.isNeg(x_orig - 328)) {
-            color = '#FF2975';
-          }
-        }
-        
-        if (color !== lastColorOld) {
-          if (g.isPosOrZero(x - (sweepX + gap + 2))) {
-            ctx.stroke();
-          }
-          ctx.beginPath();
-          ctx.strokeStyle = color;
-          ctx.moveTo(x - 2, yPulse + g.getEcgY(x - 2));
-          ctx.lineTo(x, yPulse + g.getEcgY(x));
-          lastColorOld = color;
-        } else {
-          ctx.lineTo(x, yPulse + g.getEcgY(x));
-        }
-      }
-      if (lastColorOld !== '') ctx.stroke();
-
-      // 3. Cabezal brillante en la punta del barrido
-      if (g.isPosOrZero(sweepX)) {
-        var headY = yPulse + g.getEcgY(sweepX);
-        var x_orig = sweepX * (576 / w);
-        var headColor = '#00E5FF';
-        if (g.isNeg(x_orig - 245)) {
-          headColor = '#FF2975';
-        } else if (g.isPosOrZero(x_orig - 286)) {
-          if (g.isNeg(x_orig - 328)) {
-            headColor = '#FF2975';
-          }
-        }
-        
+      // Draw glowing white head dot at sweepX_nearest
+      if (sweepX_nearest >= 0) {
+        var headY = yPulse + g.getEcgY(sweepX_nearest, w);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#36E4FF';
         ctx.beginPath();
-        ctx.arc(sweepX, headY, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = headColor;
+        ctx.arc(sweepX_nearest, headY, 4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
       }
     };
 
     g.onCountdownChange = function(targetData) {
       g.countVal = Number(targetData) || 0;
-      control('#countBgCanvas', 'REFRESH');
-
       if (g.countVal === 0) {
           setStyle('#text-num', 'visibility', 'hidden');
           setStyle('#text-go', 'visibility', 'visible');
@@ -173,52 +141,43 @@
           setStyle('#text-num', 'visibility', 'visible');
           setStyle('#text-go', 'visibility', 'hidden');
       }
+      control('#countBgCanvas', 'REFRESH');
     };
 
-    g.activateCountdown = function() {
-      g.animTick = 0;
+    g.activate = function() {
       g.tickSub = $.subscribe('/Dev/Time/Tick10hz', function() {
         g.animTick++;
-        if (g.animTick > 10000) g.animTick = 0;
+        if (g.animTick >= 20000) {
+          g.animTick = 0;
+        }
         control('#countBgCanvas', 'REFRESH');
       });
     };
 
-    g.deactivateCountdown = function() {
+    g.deactivate = function() {
       if (g.tickSub) {
         $.unsubscribe(g.tickSub);
         g.tickSub = null;
       }
     };
-  "
-  onActivate="g.activateCountdown();"
-  onDeactivate="g.deactivateCountdown();"
->
+" onActivate="g.activate();" onDeactivate="g.deactivate();">
     <div style="background-color:#111111; width:100%; height:100%; position:absolute; top:0; left:0;">
-
         <object type="canvas" id="countBgCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%;" build="ctx => g.drawCountdownBg(ctx);" />
-
-        <div class="sp-t-m p-hc" style="top:5%; color:#000000; font-weight:bold; position:absolute;">
-            START
+        
+        <!-- Curved Banner Title Wrapper matching t.html exactly -->
+        <div style="top:4%; left:12%; width:76%; height:11%; position:absolute;">
+            <div class="sp-t-m p-hc" style="top:calc(58% - 50%e); color:#000000; font-weight:bold; position:absolute;">
+                START
+            </div>
+        </div>
+        
+        <div id="text-go" class="p-hc" style="top:18%; color:#FFE322; font-size:60px; font-weight:bold; visibility:hidden;">GO</div>
+        <div id="text-num" class="p-hc" style="top:18%; color:#FFE322; font-size:60px; font-weight:bold;">
+            <eval input="/Zapp/{zapp_index}/Output/countdown" outputFormat="script x => (x > 0 ? x.toString() : ' ')" default="5" onValueChanged="g.onCountdownChange(targetData);" />
         </div>
 
-        <div id="text-go" class="p-hc" style="top:calc(38% - 50%e); color:#FFE322; position:absolute; font-size:60px; font-weight:bold; visibility:hidden;">
-            GO
-        </div>
-
-        <div id="text-num" class="p-hc" style="top:calc(38% - 50%e); color:#FFE322; position:absolute; font-size:60px; font-weight:bold;">
-            <eval input="/Zapp/{zapp_index}/Output/countdown"
-                  outputFormat="script x => (x === 5 ? '5' : (x === 4 ? '4' : (x === 3 ? '3' : (x === 2 ? '2' : (x === 1 ? '1' : ' ')))))"
-                  default="5"
-                  onValueChanged="g.onCountdownChange(targetData);" />
-        </div>
-
-        <:if test="{{ HAS_ON_EVENT }}">
         <userInput>
-          <pushButton name="up" type="lock" longType="lock"
-            onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+          <pushButton name="up" type="lock" longType="lock" onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
         </userInput>
-        </:if>
-
     </div>
 </uiView>
