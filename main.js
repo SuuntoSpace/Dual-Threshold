@@ -54,9 +54,6 @@ var tickCountdown = function () {
       playIndication("Confirm");
       break;
     case 0:
-      countdownValue = -1;
-      break;
-    case -1:
       countdownValue = -2;
       currentTemplate = 't';
       unload('_cm');
