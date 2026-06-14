@@ -1,4 +1,4 @@
-<uiView onLoad="
+<uiView onFlickUp="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" onLoad="
     var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : Function('return this')());
     g.g = g;
     g.countVal = 5;
@@ -234,8 +234,15 @@
             <eval input="/Zapp/{zapp_index}/Output/countdown" outputFormat="script x => (x >= 0 ? x.toString() : ' ')" default="5" onValueChanged="g.onCountdownChange(targetData);" />
         </div>
 
+        <:if test="{{ HAS_ON_EVENT }}">
         <userInput>
-          <pushButton name="up" type="lock" longType="lock" onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+          <pushButton name="up" type="lock" longType="lock" enabledWhileDisplayOff
+            onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+            onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+          <pushButton name="next" type="lock" longType="lock" enabledWhileDisplayOff
+            onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
+            onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
         </userInput>
+        </:if>
     </div>
 </uiView>

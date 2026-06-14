@@ -36,18 +36,23 @@ var tickCountdown = function () {
   switch (countdownValue) {
     case 6:
       countdownValue = 5;
+      playIndication("StartTimer");
       break;
     case 5:
       countdownValue = 4;
+      playIndication("StartTimer");
       break;
     case 4:
       countdownValue = 3;
+      playIndication("StartTimer");
       break;
     case 3:
       countdownValue = 2;
+      playIndication("StartTimer");
       break;
     case 2:
       countdownValue = 1;
+      playIndication("StartTimer");
       break;
     case 1:
       countdownValue = 0;
