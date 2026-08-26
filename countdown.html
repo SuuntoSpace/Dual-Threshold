@@ -236,9 +236,8 @@
 
         <:if test="{{ HAS_ON_EVENT }}">
         <userInput>
-          <pushButton name="up" type="lock" longType="lock" enabledWhileDisplayOff
-            onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');"
-            onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+          <pushButton name="up" enabledWhileDisplayOff
+            onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
         </userInput>
         </:if>
     </div>
