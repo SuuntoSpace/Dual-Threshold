@@ -22,6 +22,17 @@
         return '';
     };
 
+    g.onTargetChange = function(value) {
+      var parts = String(value || '').split('-');
+      if (parts.length === 2) {
+        g.targetLow = Number(parts[0]) || 0;
+        g.targetHigh = Number(parts[1]) || 0;
+      } else {
+        g.targetLow = 0;
+        g.targetHigh = 0;
+      }
+    };
+
     /* Canvas ultra ligero: Franja Amarilla fija y fondo Negro puro */
     g.drawAlertBackground = function(ctx) {
       var cx = ctx.width / 2;
@@ -98,7 +109,7 @@
         </div>
         <div class="sp-vertical-center" style="top:calc(62% - 50%e); left:37%; position:absolute;">
             <span class="f-num" style="color:#FFFFFF; font-size:24px; font-weight:bold;">
-                <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="var parts = targetData.split('-'); if (parts.length === 2) { g.targetLow = Number(parts[0]) || 0; g.targetHigh = Number(parts[1]) || 0; } else { g.targetLow = 0; g.targetHigh = 0; }" />
+                <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="g.onTargetChange(targetData);" />
             </span>
         </div>
         <div class="sp-vertical-center" style="top:calc(62% - 50%e); left:76%; position:absolute;">

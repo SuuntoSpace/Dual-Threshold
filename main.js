@@ -9,7 +9,7 @@ var lt1_hr, lt1_pace, lt2_hr, lt2_pace, lt2_power;
 var h1_hrSum, h1_spdSum, h1_count, h1_spdCount;
 var h2_hrSum, h2_spdSum, h2_count, h2_spdCount;
 var h3_pwrSum, h3_pwrCount, stage_results;
-var zs_active, dfa_current, debugTimer, outOfRangeSeconds, alertShowTimer, wasOutOfRange;
+var zs_active, dfa_current, debugTimer, outOfRangeSeconds, alertShowTimer, wasOutOfRange, lastResultSaved;
 var countdownValue = 6, isCountdownActive = 0;
 var WARMUP_DUR = 600, STAGE_1_DUR = 600, STAGE_2_DUR = 600, STAGE_3_DUR = 600, STAGE_4_DUR = 300, COOLDOWN_DUR = 300;
 
@@ -22,7 +22,7 @@ var resetApp = function () {
   h2_hrSum = 0; h2_spdSum = 0; h2_count = 0; h2_spdCount = 0;
   h3_pwrSum = 0; h3_pwrCount = 0; stage_results = [];
   zs_active = 0; dfa_current = 0; debugTimer = 0; isPaused = 0; wasOutOfRange = 0;
-  outOfRangeSeconds = 0; alertShowTimer = 0;
+  outOfRangeSeconds = 0; alertShowTimer = 0; lastResultSaved = 0;
 };
 
 function onLoad(input, output) { resetApp(); }
@@ -134,8 +134,8 @@ var accumulateDecoupling = function (input, dur) {
 };
 
 var saveStageResult = function (idx) {
-  var ef1 = 0; if (h1_count > 0 && h1_hrSum > 0) ef1 = (h1_spdSum / h1_spdCount) / (h1_hrSum / h1_count);
-  var ef2 = 0; if (h2_count > 0 && h2_hrSum > 0) ef2 = (h2_spdSum / h2_spdCount) / (h2_hrSum / h2_count);
+  var ef1 = 0; if (h1_count > 0 && h1_hrSum > 0 && h1_spdCount > 0) ef1 = (h1_spdSum / h1_spdCount) / (h1_hrSum / h1_count);
+  var ef2 = 0; if (h2_count > 0 && h2_hrSum > 0 && h2_spdCount > 0) ef2 = (h2_spdSum / h2_spdCount) / (h2_hrSum / h2_count);
   var dec = 0; if (ef1 > 0) dec = ((ef1 - ef2) / ef1) * 100;
   stage_results[stage_results.length] = {
     index: idx, dec: dec,
@@ -157,9 +157,74 @@ var calculateThresholds = function () {
   }
   if (f2 === 0 && stage_results.length > 0) {
     lt2_hr = stage_results[stage_results.length - 1].hr;
-    lt2_pace = stage_results[stage_results.length - 1].pace;
+      lt2_pace = stage_results[stage_results.length - 1].pace;
   }
+
+  // A marginal Stage 1 crossing must be confirmed by both later stable stages.
+  // Only LT1 heart rate is refined; pace and all LT2 results remain unchanged.
+  if (stage_results.length >= 3 &&
+      stage_results[0].dec > 5.0 && stage_results[0].dec <= 7.5 &&
+      stage_results[1].dec > 5.0 && stage_results[2].dec > 5.0 &&
+      stage_results[1].hr > 0 && stage_results[2].hr > 0) {
+    lt1_hr = (stage_results[1].hr + stage_results[2].hr) / 2;
+  }
+
   if (lt2_hr < lt1_hr) { lt2_hr = lt1_hr; lt2_pace = lt1_pace; }
+};
+
+var isLeapYear = function (year) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+};
+
+var formatLocalDate = function (epochSeconds) {
+  var seconds = Number(epochSeconds);
+  if (isNaN(seconds) || seconds <= 0 || seconds === Infinity || seconds === -Infinity) return '';
+  var days = Math.floor(seconds / 86400);
+  var year = 1970;
+  var yearDays;
+  var month = 1;
+  var monthDays;
+  while (year < 2200) {
+    yearDays = isLeapYear(year) ? 366 : 365;
+    if (days < yearDays) break;
+    days -= yearDays;
+    year++;
+  }
+  while (month <= 12) {
+    if (month === 2) monthDays = isLeapYear(year) ? 29 : 28;
+    else if (month === 4 || month === 6 || month === 9 || month === 11) monthDays = 30;
+    else monthDays = 31;
+    if (days < monthDays) break;
+    days -= monthDays;
+    month++;
+  }
+  var day = days + 1;
+  return (day < 10 ? '0' : '') + day + '/' + (month < 10 ? '0' : '') + month + '/' + year;
+};
+
+var formatPaceForStorage = function (speed) {
+  var value = Number(speed);
+  if (isNaN(value) || value <= 0 || value === Infinity || value === -Infinity) return '';
+  var totalSeconds = Math.round(1000 / value);
+  var minutes = Math.floor(totalSeconds / 60);
+  var seconds = totalSeconds % 60;
+  return minutes + ':' + (seconds < 10 ? '0' : '') + seconds + ' min/km';
+};
+
+var saveLastCompletedTest = function (localTime) {
+  if (lastResultSaved === 1) return;
+  var dateText = formatLocalDate(localTime);
+  var lt1PaceText = formatPaceForStorage(lt1_pace);
+  var lt2PaceText = formatPaceForStorage(lt2_pace);
+  if (!dateText || lt1_hr <= 0 || lt2_hr <= 0 || !lt1PaceText || !lt2PaceText) return;
+  if (typeof localStorage === 'undefined' || !localStorage || !localStorage.setItem) return;
+  localStorage.setItem('lastTestDate', dateText);
+  localStorage.setItem('lastLt1HR', '' + Math.round(lt1_hr * 60));
+  localStorage.setItem('lastLt1Pace', lt1PaceText);
+  localStorage.setItem('lastLt2HR', '' + Math.round(lt2_hr * 60));
+  localStorage.setItem('lastLt2Pace', lt2PaceText);
+  localStorage.setItem('lastLt2Power', '' + Math.max(0, Math.round(lt2_power)));
+  lastResultSaved = 1;
 };
 
 function evaluate(input, output) {
@@ -222,6 +287,7 @@ function evaluate(input, output) {
     h1_hrSum = 0; h1_spdSum = 0; h1_count = 0; h1_spdCount = 0;
     h2_hrSum = 0; h2_spdSum = 0; h2_count = 0; h2_spdCount = 0;
     h3_pwrSum = 0; h3_pwrCount = 0; outOfRangeSeconds = 0;
+    if (state === STATE_COOLDOWN) saveLastCompletedTest(input.LocalTime);
   }
 
   var hr = Math.round((input.HeartRate || 0) * 60);

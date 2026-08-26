@@ -4,6 +4,10 @@
 
 The app analyzes **aerobic decoupling (pace vs. heart rate)** by comparing the first half and the second half of each stable phase of the test to estimate the deflections of the LT1 and LT2 thresholds, using your heart rate zones configured on the watch (based on your `MaxHR`).
 
+Current source version: **1.9**. This release keeps the original protocol and four-field activity summary, stores the date and five results from the last valid completed test as read-only variables in Suunto App, preserves the working countdown and summary behavior, and refines only LT1 heart rate when a marginal Stage 1 crossing is confirmed by Stage 2 and Stage 3. LT1 pace, LT2 and Critical Power remain unchanged. Physical-watch confirmation remains required; simulator behavior is not conclusive for temporal functions.
+
+The persistent values are updated only after Stage 4 has completed and valid heart-rate and speed results exist. An interrupted or invalid test does not overwrite the previous saved result. Pace is stored for the settings view as `min/km`; the live and activity-summary pace fields continue to use Suunto's native unit-aware formatter.
+
 ---
 
 ## ⏱️ Test Structure (Fixed Durations)

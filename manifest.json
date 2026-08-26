@@ -1,11 +1,11 @@
 {
   "name": "Lactate & Power Test",
-  "version": "1.0",
+  "version": "1.9",
   "author": "Joaquin Pérez & Oscar Muñoz Ferriz",
   "description": "Guided LT1/LT2 lactate & Power Test",
   "type": "feature",
   "usage": "workout",
-  "modificationTime": 1781631205,
+  "modificationTime": 1785484800,
   "in": [
     {
       "name": "HeartRate",
@@ -25,6 +25,11 @@
     {
       "name": "MaxHR",
       "source": "/Settings/User/MaxHR",
+      "type": "get"
+    },
+    {
+      "name": "LocalTime",
+      "source": "/Dev/Time/LocalTime",
       "type": "get"
     }
   ],
@@ -95,6 +100,38 @@
     },
     {
       "name": "countdown.html"
+    }
+  ],
+  "variables": [
+    {
+      "shownName": "Last test date",
+      "path": "lastTestDate",
+      "type": "string"
+    },
+    {
+      "shownName": "Last LT1 HR [bpm]",
+      "path": "lastLt1HR",
+      "type": "int"
+    },
+    {
+      "shownName": "Last LT1 pace",
+      "path": "lastLt1Pace",
+      "type": "string"
+    },
+    {
+      "shownName": "Last LT2 HR [bpm]",
+      "path": "lastLt2HR",
+      "type": "int"
+    },
+    {
+      "shownName": "Last LT2 pace",
+      "path": "lastLt2Pace",
+      "type": "string"
+    },
+    {
+      "shownName": "Last LT2 power [W]",
+      "path": "lastLt2Power",
+      "type": "int"
     }
   ]
 }

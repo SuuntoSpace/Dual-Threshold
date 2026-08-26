@@ -113,6 +113,38 @@
       setStyle('#hr-heart-ico', 'color', color);
       setStyle('#hr-val-text', 'color', color);
     };
+
+    g.onTargetChange = function(value) {
+      var parts = String(value || '').split('-');
+      if (parts.length === 2) {
+        g.targetLow = Number(parts[0]) || 0;
+        g.targetHigh = Number(parts[1]) || 0;
+      } else {
+        g.targetLow = 0;
+        g.targetHigh = 0;
+      }
+      g.updateHRColors();
+      control('#hrGauge', 'REFRESH');
+    };
+
+    g.onHeartRateChange = function(value) {
+      g.currentHR = Number(value) || 0;
+      g.updateHRColors();
+      control('#hrGauge', 'REFRESH');
+    };
+
+    g.onStateChange = function(value) {
+      var steps = ['PRE','1/4','2/4','3/4','4/4','POST','DONE'];
+      var idx = steps.indexOf(value);
+      g.stateNum = idx !== -1 ? idx : 0;
+      g.updateHRColors();
+      control('#hrGauge', 'REFRESH');
+    };
+
+    g.onZoneChange = function(value) {
+      g.currentZone = Number(value) || 0;
+      g.updateHRColors();
+    };
   "
   onActivate=""
   onDeactivate=""
@@ -136,7 +168,7 @@
 
         <!-- 3. Target HR Range -->
         <div class="f-l f-num p-hc" style="top:calc(28% - 50%e); font-size:28px; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="var parts = targetData.split('-'); if (parts.length === 2) { g.targetLow = Number(parts[0]) || 0; g.targetHigh = Number(parts[1]) || 0; } else { g.targetLow = 0; g.targetHigh = 0; } g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
+            <eval input="/Zapp/{zapp_index}/Output/hrTargetNum" outputFormat="script x => Math.floor(x/1000) + '-' + (x%1000)" default="---" onValueChanged="g.onTargetChange(targetData);" />
         </div>
 
         <!-- 4. Recommended HR Label -->
@@ -157,7 +189,7 @@
         <!-- Value -->
         <div class="sp-vertical-center" style="top:calc(50% - 50%e); left:calc(70% - 50%e); position:absolute;">
             <span id="hr-val-text" class="f-num" style="font-size:28px; color:#FFFFFF;">
-                <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.currentHR = Number(targetData) || 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
+                <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" onValueChanged="g.onHeartRateChange(targetData);" />
             </span>
             <span id="hr-heart-ico" class="f-ico" style="color:#FF2A55; margin-left:4px;">&#xF101;</span>
         </div>
@@ -172,12 +204,12 @@
 
         <!-- 8. Step Indicator -->
         <div class="f-s p-hc" style="top:calc(93% - 50%e); font-size:18px; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'PRE,1/4,2/4,3/4,4/4,POST,DONE'.split(',')[x] || 'PRE'" default="---" onValueChanged="var steps = ['PRE','1/4','2/4','3/4','4/4','POST','DONE']; var idx = steps.indexOf(targetData); g.stateNum = idx !== -1 ? idx : 0; g.updateHRColors(); control('#hrGauge', 'REFRESH');" />
+            <eval input="/Zapp/{zapp_index}/Output/stateNum" outputFormat="script x => 'PRE,1/4,2/4,3/4,4/4,POST,DONE'.split(',')[x] || 'PRE'" default="---" onValueChanged="g.onStateChange(targetData);" />
         </div>
 
         <!-- Heart Rate Zone Subscription (invisible) -->
         <div style="top:0; left:0; width:0px; height:0px; position:absolute;">
-            <eval input="/Zapp/{zapp_index}/Output/hrZoneNum" outputFormat="script x => x" default="0" onValueChanged="g.currentZone = Number(targetData) || 0; g.updateHRColors();" />
+            <eval input="/Zapp/{zapp_index}/Output/hrZoneNum" outputFormat="script x => x" default="0" onValueChanged="g.onZoneChange(targetData);" />
         </div>
         <!-- Button Navigation -->
         </div>
